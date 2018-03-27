@@ -6,11 +6,10 @@ module.exports = function (key) {
 
     stripe = require('stripe')(key);
 
-    const module = Object.assign({}, {
+    return Object.assign({}, {
         getBetweenDates,
         populateStripeResource,
     });
-    return module;
 };
 
 
@@ -42,9 +41,13 @@ const getBetweenDates = async ({resource, startDate, endDate, result = [], strip
 //resolve an associated stripe resource onto the items in a collection (using the stripe id) - eg resolve charges onto application fees
 const populateStripeResource = async ({ collection, targetResource, foreignKey, as = targetResource }) => {
 
-    return await Promise.all(collection.map( async x  => {
-        //get the item and map to collection
-        const y = await stripe[targetResource].retrieve(x[foreignKey]);
-        return Object.assign(x, {[as] : y });
-    }));
+    try {
+        return await Promise.all(collection.map(async x => {
+            //get the item and map to collection
+            const y = await stripe[targetResource].retrieve(x[foreignKey]);
+            return Object.assign(x, {[as]: y});
+        }));
+    } catch (error) {
+        console.log(error);
+    }
 };

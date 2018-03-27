@@ -1,0 +1,1 @@
+Some common operations we were doing with the stripe module.
