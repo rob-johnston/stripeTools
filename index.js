@@ -9,6 +9,7 @@ module.exports = function (key) {
     return Object.assign({}, {
         getBetweenDates,
         populateStripeResource,
+        stripe
     });
 };
 
