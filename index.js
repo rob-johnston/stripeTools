@@ -1,4 +1,4 @@
-const { last } = require('lodash');
+const { last, find } = require('lodash');
 const moment = require('moment');
 let stripe;
 
@@ -9,6 +9,7 @@ module.exports = function (key) {
     return Object.assign({}, {
         getBetweenDates,
         populateStripeResource,
+        safeRefund,
         stripe
     });
 };
@@ -49,6 +50,50 @@ const populateStripeResource = async ({ collection, targetResource, foreignKey, 
             return Object.assign(x, {[as]: y});
         }));
     } catch (error) {
+        console.log(error);
+    }
+};
+
+
+/* creates a stripe refund and reverses the associated transfer, but only if the account has enough money to cover the refund */
+const safeRefund = async ({ chargeId, amount = 'full', refundApplicationFee = true, reverseTransfer = true, reason }) => {
+
+    try {
+        //get the initial charge
+        const charge = await stripe.charges.retrieve(chargeId);
+
+        //use full amount unless told otherwise
+        if(amount === 'full') amount = charge.amount;
+
+        //make sure its not already refunded
+        if (charge.refunded) throw new Error(`Charge ${chargeId} has already been refunded`);
+
+        //query balance of target account
+        const balanceObject = await stripe.balance.retrieve({ stripe_account : charge.destination});
+
+        //pick result with same currency as charge currency
+        const balance = find(balanceObject.available, x => x.currency === charge.currency);
+
+        //if balance is more than refund amount
+        if(balance < amount) {
+            throw new Error(`Balance of account ${charge.destination} is ${blance} ${charge.currency}, not enough to refund ${amount} for ${chargeId}`);
+        }
+
+        //create refund, reversing appFee and transfer
+        const refund = await stripe.refunds.create({
+                charge : chargeId,
+                amount: amount,
+                metadata: {
+                    reason : reason
+                },
+                refund_application_fee: refundApplicationFee,
+                reverse_transfer: reverseTransfer
+            }
+        );
+
+        console.log(refund);
+
+    } catch(error) {
         console.log(error);
     }
 };
