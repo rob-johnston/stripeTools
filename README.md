@@ -65,3 +65,12 @@ Params
 await stripetools.refund('<charge ID here>');
 
 ```
+
+### multiList 
+When getting all elements of a resource on stripe we have to take it at a maximum 100 items at a time. Use this
+method to specify a larger limit and the limit at each step
+
+Params
+- resource : the resource we want to get
+- customLimit : the max number of items we want to return (default is 500)
+- stripeArgs = { limit : 100 }  number of elements to grab in each step, default and maximum is 100

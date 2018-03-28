@@ -10,6 +10,7 @@ module.exports = function (key) {
         getBetweenDates,
         populateStripeResource,
         safeRefund,
+        multList,
         stripe
     });
 };
@@ -95,5 +96,20 @@ const safeRefund = async ({ chargeId, amount = 'full', refundApplicationFee = tr
 
     } catch(error) {
         console.log(error);
+    }
+};
+
+/*take a higher limit and recurse to get the results
+ */
+const multiList = async ({resource, result = [], customLimit = 500, stripeArgs = { limit : 100 }}) => {
+
+    const results = await stripe[resource].list(stripeArgs);
+    result = result.concat(results.data);
+
+    if(result.length >= customLimit){
+        return results.slice(0, result.length - (Math.abs(result.length-customLimit)));
+    } else {
+        const args = Object.assign(stripeArgs, { starting_after : last(result).id});
+        return multiList({resource, result, customLimit, args})
     }
 };
