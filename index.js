@@ -19,7 +19,7 @@ module.exports = function (key) {
 /* function for dealing with stripes pagination in order to retrieve
     results between two certain dates
  */
-const getBetweenDates = async ({resource, startDate, endDate, result = [], stripeArgs = { limit : 20 }, connectedAccount = {}, failsafe = {}} ) => {
+const getBetweenDates = async ({resource, startDate, endDate, result = [], stripeArgs = { limit : 20 }, connectedAccount = '', failsafe = {}} ) => {
 
     //final steps before returning a result
     const finalize = result => {
