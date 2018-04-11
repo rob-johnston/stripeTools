@@ -10,7 +10,7 @@ module.exports = function (key) {
         getBetweenDates,
         populateStripeResource,
         safeRefund,
-        multList,
+        multiList,
         stripe
     });
 };
@@ -19,22 +19,24 @@ module.exports = function (key) {
 /* function for dealing with stripes pagination in order to retrieve
     results between two certain dates
  */
-const getBetweenDates = async ({resource, startDate, endDate, result = [], stripeArgs = { limit : 100 } } ) => {
+const getBetweenDates = async ({resource, startDate, endDate, result = [], stripeArgs = { limit : 20 }, connectedAccount = {} } ) => {
 
     try {
 
-        const items = await stripe[resource].list(stripeArgs);
+        const items = await stripe[resource].list(stripeArgs, connectedAccount);
         result = result.concat(items.data);
         const lastCreated = moment.unix(last(result).created).format('YYYY-MM-DD');
 
         //fetch next round or recurse
         if(moment(lastCreated).isSameOrAfter(startDate)){
             const args = Object.assign(stripeArgs, { starting_after : last(result).id});
-            return getBetweenDates({ resource, startDate, endDate, result, stripeArgs : args});
+            return getBetweenDates({ resource, startDate, endDate, result, stripeArgs : args, connectedAccount : connectedAccount});
         } else {
             //sanitise dates and return
-            return result.filter(x => moment(moment.unix(x.created).format('YYYY-MM-DD')).isSameOrAfter(startDate)
-                && moment(moment.unix(x.created).format('YYYY-MM-DD')).isSameOrBefore(endDate));
+            return result.filter(x => {
+                    moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrAfter(startDate)
+                    && moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrBefore(endDate)
+            });
         }
     } catch (error) {
         console.log(error);
@@ -103,11 +105,11 @@ const safeRefund = async ({ chargeId, amount = 'full', refundApplicationFee = tr
  */
 const multiList = async ({resource, result = [], customLimit = 500, stripeArgs = { limit : 100 }}) => {
 
-    const results = await stripe[resource].list(stripeArgs);
-    result = result.concat(results.data);
+    const resources = await stripe[resource].list(stripeArgs);
+    result = result.concat(resources.data);
 
     if(result.length >= customLimit){
-        return results.slice(0, result.length - (Math.abs(result.length-customLimit)));
+        return result.slice(0, result.length - (Math.abs(result.length-customLimit)));
     } else {
         const args = Object.assign(stripeArgs, { starting_after : last(result).id});
         return multiList({resource, result, customLimit, args})
