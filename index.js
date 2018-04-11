@@ -44,7 +44,13 @@ const getBetweenDates = async ({resource, startDate, endDate, result = [], strip
     try {
         //gathering the data
 
-        const items = await stripe[resource].list(stripeArgs, connectedAccount);
+        let items;
+
+        if(!connectAccount) {
+            items = await stripe[resource].list(stripeArgs);
+        } else {
+            items = await stripe[resource].list(stripeArgs, connectedAccount)
+        }
 
         //use a failsafe in case we get to end of data without reaching our date target
         if(get(failsafe, 'id') === last(items.data)){
