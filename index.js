@@ -39,14 +39,14 @@ const getBetweenDates = async ({resource, startDate, endDate, result = [], strip
 
         //remove duplicates
         return uniqBy(result, unique);
-    }
+    };
 
     try {
         //gathering the data
 
         let items;
 
-        if(!connectAccount) {
+        if(!connectedAccount) {
             items = await stripe[resource].list(stripeArgs);
         } else {
             items = await stripe[resource].list(stripeArgs, connectedAccount)
