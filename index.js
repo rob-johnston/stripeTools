@@ -1,4 +1,4 @@
-const { last, find } = require('lodash');
+const { last, find, uniqBy, get } = require('lodash');
 const moment = require('moment');
 let stripe;
 
@@ -19,29 +19,57 @@ module.exports = function (key) {
 /* function for dealing with stripes pagination in order to retrieve
     results between two certain dates
  */
-const getBetweenDates = async ({resource, startDate, endDate, result = [], stripeArgs = { limit : 20 }, connectedAccount = {} } ) => {
+const getBetweenDates = async ({resource, startDate, endDate, result = [], stripeArgs = { limit : 20 }, connectedAccount = {}, failsafe = {}} ) => {
+
+    //final steps before returning a result
+    const finalize = result => {
+        //to check each result is between acceptable date range
+        const sanitizeDates = x => {
+            return moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrAfter(startDate)
+                && moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrBefore(endDate);
+        };
+
+        //return unique property
+        const unique = x => {
+            return x.id;
+        };
+
+        //sanitise dates and return
+        result = result.filter(sanitizeDates);
+
+        //remove duplicates
+        return uniqBy(result, unique);
+    }
 
     try {
+        //gathering the data
 
         const items = await stripe[resource].list(stripeArgs, connectedAccount);
+
+        //use a failsafe in case we get to end of data without reaching our date target
+        if(get(failsafe, 'id') === last(items.data)){
+            return finalize(result);
+        }
+
         result = result.concat(items.data);
         const lastCreated = moment.unix(last(result).created).format('YYYY-MM-DD');
 
         //fetch next round or recurse
         if(moment(lastCreated).isSameOrAfter(startDate)){
             const args = Object.assign(stripeArgs, { starting_after : last(result).id});
-            return getBetweenDates({ resource, startDate, endDate, result, stripeArgs : args, connectedAccount : connectedAccount});
+            return getBetweenDates({ resource, startDate, endDate, result, stripeArgs : args, connectedAccount : connectedAccount, failsafe : last(result).id });
+
         } else {
-            //sanitise dates and return
-            return result.filter(x => {
-                    return moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrAfter(startDate)
-                    && moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrBefore(endDate);
-            });
+
+            //clean data and return it
+            return finalize(result);
         }
     } catch (error) {
         console.log(error);
     }
 };
+
+
 
 //resolve an associated stripe resource onto the items in a collection (using the stripe id) - eg resolve charges onto application fees
 const populateStripeResource = async ({ collection, targetResource, foreignKey, as = targetResource }) => {
