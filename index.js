@@ -34,8 +34,8 @@ const getBetweenDates = async ({resource, startDate, endDate, result = [], strip
         } else {
             //sanitise dates and return
             return result.filter(x => {
-                    moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrAfter(startDate)
-                    && moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrBefore(endDate)
+                    return moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrAfter(startDate)
+                    && moment(moment.unix(x.created).format('YYYY-MM-DD').toString()).isSameOrBefore(endDate);
             });
         }
     } catch (error) {
