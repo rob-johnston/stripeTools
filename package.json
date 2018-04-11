@@ -1,6 +1,6 @@
 {
   "name": "stripetools",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "module/endpoint for handling some common homelike stripe operations",
   "main": "index.js",
   "scripts": {
