@@ -1,5 +1,7 @@
 Some common operations we were doing with the stripe module.
 
+PLEASE NOTE : This is a WIP module right now until a v2 is released.
+
 How to use
 
 ```
