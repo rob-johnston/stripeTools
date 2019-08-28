@@ -1,6 +1,6 @@
 Some common operations we were doing with the stripe module.
 
-PLEASE NOTE : This is a WIP module right now until a v2 is released.
+this is a WIP project
 
 How to use
 
